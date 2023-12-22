@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.min.css">
+    <?!= HtmlService.createHtmlOutputFromFile('css').getContent(); ?> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-light d-flex align-items-center justify-content-center">
+    <div class="container mt-2">
+        <div class="card">
+            <div class="card-body">
+              <div class="card-header">
+                <h2 class="text-center">DIFFERENT USER DIFFERENT DASHBAORD</h2>
+                  </div>
+                  <center>
+                <form id="loginForm" class="mt-5">
+                  <h4 class="mt-4">Login</h4>
+                    <hr class="bg-primary col-md-2">
+                    <div class="form-group col-md-4">
+                        <label for="username">Username</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+
+                    <div class="form-group col-md-4">
+                        <label for="password">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+
+                    <button type="button" class="btn btn-primary col-md-4" onclick="login()">Login</button>
+                </form>
+                  </center>
+            </div>
+        </div>
+
+        <div id="userDashboard" style="display: none;">
+          <?!= HtmlService.createHtmlOutputFromFile('user').getContent(); ?> 
+        </div>
+
+        <div id="adminDashboard" style="display: none;">
+            <?!= HtmlService.createHtmlOutputFromFile('admin').getContent(); ?> 
+        </div>
+
+        <div id="dataTableContainer"></div>
+
+                
+        <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+        <script src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.min.js"></script>  
+        <script>
+
+    
+    function login() {
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    google.script.run
+        .withSuccessHandler(function(isValidCredentials) {
+            if (isValidCredentials) {
+                alert('Login successful!');
+                const userRole = determineUserRole(username);
+                loadContent(userRole);
+                document.getElementById('loginForm').style.display = 'none';
+            } else {
+                alert('Invalid credentials. Please try again.');
+            }
+        })
+    .authenticateUser(username, password);
+}
+
+function determineUserRole(username) {
+    return username.startsWith('admin') ? 'admin' : 'user';
+}
+
+function loadContent(userRole) {
+    const userDashboard = document.getElementById('userDashboard');
+    const adminDashboard = document.getElementById('adminDashboard');
+    const dataTableContainer = document.getElementById('dataTableContainer');
+
+    if (userRole === 'admin') {
+        adminDashboard.style.display = 'block';
+        loadDataTable();
+    } else {
+        userDashboard.style.display = 'block';
+    }
+}
+
+function loadDataTable() {
+    google.script.run.withSuccessHandler(function(html) {
+        document.getElementById('dataTableContainer').innerHTML = html;
+        $('#dataTable').DataTable();
+    }).getAdminDataTable();
+}
+
+
+function deleteRow(rowIndex) {
+    if (confirm('Are you sure you want to delete this row?')) {
+        google.script.run.deleteRow(rowIndex);
+        loadDataTable();
+    }
+}
+
+
+ $(document).ready(function() {
+    function getRowData(rowIndex) {
+        var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Input');
+        var rowData = sheet.getRange(rowIndex + 1, 1, 1, 3).getValues()[0];
+        return rowData;
+    }
+});
+          
+    </script>  
+    </body>
+</html>
